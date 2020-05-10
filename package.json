@@ -1,0 +1,64 @@
+{
+  "name": "mongoose-transient",
+  "version": "0.0.0-development",
+  "description": "Create transient properties on mongoose schemas",
+  "main": "dist/index.js",
+  "scripts": {
+    "precm": "npm run test:coverage",
+    "cm": "git-cz",
+    "prebuild": "rimraf dist",
+    "build": "tsc",
+    "coverage:post": "codecov",
+    "pretest:coverage": "rimraf coverage",
+    "test:coverage": "jest --coverage --detectOpenHandles",
+    "test": "jest --detectOpenHandles",
+    "test:watch": "jest --watchAll --detectOpenHandles",
+    "semantic-release": "semantic-release"
+  },
+  "keywords": [
+    "mongoose",
+    "transient",
+    "virtual",
+    "plugin",
+    "link",
+    "properties"
+  ],
+  "author": "jfrazx",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@semantic-release/commit-analyzer": "^8.0.1",
+    "@semantic-release/release-notes-generator": "^9.0.1",
+    "@types/jest": "^25.2.1",
+    "@types/mongoose": "^5.7.15",
+    "@typescript-eslint/parser": "^2.31.0",
+    "codecov": "^3.6.5",
+    "commitizen": "^4.1.2",
+    "cz-conventional-changelog": "^3.2.0",
+    "eslint": "^6.8.0",
+    "husky": "^4.2.5",
+    "jest": "^25.5.0",
+    "mongodb-memory-server": "^6.5.2",
+    "mongoose": "^5.9.12",
+    "prettier": "^2.0.5",
+    "rimraf": "^3.0.2",
+    "semantic-release": "^17.0.7",
+    "travis-deploy-once": "^5.0.11",
+    "ts-jest": "^25.5.0",
+    "typescript": "^3.8.3"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "husky": {
+    "hooks": {
+      "prepare-commit-msg": "exec < /dev/tty && git cz --hook || true"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jfrazx/mongoose-transient.git"
+  }
+}

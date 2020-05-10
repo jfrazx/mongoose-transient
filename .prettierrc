@@ -1,0 +1,16 @@
+{
+  "overrides": [
+    {
+      "files": ".prettierrc",
+      "options": {
+        "parser": "json"
+      }
+    }
+  ],
+  "printWidth": 85,
+  "arrowParens": "always",
+  "bracketSpacing": true,
+  "endOfLine": "lf",
+  "singleQuote": true,
+  "trailingComma": "all"
+}
