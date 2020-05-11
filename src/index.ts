@@ -24,13 +24,10 @@ export const transient = (schema: mongoose.Schema<any>): void => {
     const { transient: trans = false, default: defaultValue } = options;
 
     if (trans) {
-      schema.remove(path);
-
       const opts = setOptions(path, trans);
 
-      if (opts.linkTo.length) {
-        linkPaths(schema, opts);
-      }
+      schema.remove(path);
+      linkPaths(schema, opts);
 
       schema.virtual(path).get(getter(opts, defaultValue)).set(setter(opts));
     }
@@ -80,10 +77,10 @@ const setOptions = (path: string, trans: Transience): TransOpts => {
   const args = determineArgs(trans);
 
   return {
-    path,
-    as,
     linkTo,
+    path,
     args,
+    as,
     get,
     set,
   };

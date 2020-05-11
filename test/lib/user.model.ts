@@ -59,15 +59,14 @@ export interface IUser {
 export interface UserModel extends IUser, mongoose.Document {
   _id: any;
 }
-function preHook(this: UserModel) {
+function preHook(this: UserModel, next: Function) {
   if (this.isNew || this.isModified('password')) {
     if (this.password !== this.confirmationPassword) {
-      this.invalidate(
-        'password',
-        'Password and Confirmation Password do not match',
-      );
+      this.invalidate('password', 'Password and Confirmation Password do not match');
     }
   }
+
+  next();
 }
 export const mockedPreHook = jest.fn(preHook);
 

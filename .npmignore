@@ -2,7 +2,6 @@
 
 *.ts
 *.log
-*.map
 tsconfig.json
 tslint.json
 .eslintrc

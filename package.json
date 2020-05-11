@@ -35,11 +35,11 @@
     "codecov": "^3.6.5",
     "commitizen": "^4.1.2",
     "cz-conventional-changelog": "^3.2.0",
-    "eslint": "^6.8.0",
+    "eslint": "^7.0.0",
     "husky": "^4.2.5",
     "jest": "^25.5.0",
     "mongodb-memory-server": "^6.5.2",
-    "mongoose": "^5.9.12",
+    "mongoose": "^5.9.13",
     "prettier": "^2.0.5",
     "rimraf": "^3.0.2",
     "semantic-release": "^17.0.7",
@@ -60,5 +60,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/jfrazx/mongoose-transient.git"
+  },
+  "peerDependencies": {
+    "mongoose": ">= 4.4.5"
   }
 }
