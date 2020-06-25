@@ -4,7 +4,7 @@ export interface TransientTypeOpts<T = any> extends mongoose.SchemaTypeOpts<T> {
   transient?: Transience;
 }
 export type Transience = boolean | string | TransientCaller | TransientOptions;
-export type TransientCaller = <T = any, R = T>(value: T, ...extra: any[]) => R;
+export type TransientCaller = <T = any>(value: T, ...extra: any[]) => T;
 export interface TransientOptions {
   get?: TransientCaller;
   set?: TransientCaller;
