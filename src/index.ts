@@ -1,10 +1,10 @@
 import * as mongoose from 'mongoose';
 
-export interface TransientTypeOpts extends mongoose.SchemaTypeOpts<any> {
+export interface TransientTypeOpts<T = any> extends mongoose.SchemaTypeOpts<T> {
   transient?: Transience;
 }
 export type Transience = boolean | string | TransientCaller | TransientOptions;
-export type TransientCaller = <T = any>(value: T, ...extra: any[]) => T;
+export type TransientCaller = <T = any, R = T>(value: T, ...extra: any[]) => R;
 export interface TransientOptions {
   get?: TransientCaller;
   set?: TransientCaller;
@@ -87,13 +87,13 @@ const setOptions = (path: string, trans: Transience): TransOpts => {
 };
 
 const determineLinkTo = (trans: Transience): string[] =>
-  typeof trans === 'object' && trans.linkTo ? asArray(trans.linkTo) : [];
+  isObject(trans) && trans.linkTo ? asArray(trans.linkTo) : [];
 
 const determineArgs = (trans: Transience): any[] =>
-  typeof trans === 'object' && Array.isArray(trans.args) ? trans.args : [];
+  isObject(trans) && Array.isArray(trans.args) ? trans.args : [];
 
 const determineGetter = (trans: Transience): TransientCaller =>
-  typeof trans === 'object' && isFunction(trans.get) ? trans.get : defaultCaller;
+  isObject(trans) && isFunction(trans.get) ? trans.get : defaultCaller;
 
 const determineSetter = (trans: Transience): TransientCaller =>
   isFunction(trans)
@@ -102,19 +102,20 @@ const determineSetter = (trans: Transience): TransientCaller =>
     ? trans.set
     : defaultCaller;
 
-const defaultCaller = <T>(value: T) => value;
+const defaultCaller: TransientCaller = (value: any) => value;
 
 const determinePropertyName = (path: string, trans: Transience): string =>
   isString(trans)
     ? trans
-    : typeof trans === 'object' && isString(trans.as)
+    : isObject(trans) && isString(trans.as)
     ? trans.as
     : `_${path}`;
 
 const asArray = <T>(value: T | T[]): T[] => (Array.isArray(value) ? value : [value]);
-const isFunction = (value: any): value is Function => typeof value === 'function';
+const isFunction = (value: any): value is TransientCaller =>
+  typeof value === 'function';
 const isString = (value: any): value is string => typeof value === 'string';
-const isObject = (value: any): value is object =>
+const isObject = (value: any): value is TransientOptions =>
   value && !Array.isArray(value) && typeof value === 'object';
 
 export default transient;

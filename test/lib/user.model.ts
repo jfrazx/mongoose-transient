@@ -48,7 +48,7 @@ export interface IUser {
   _id?: any;
   name: string;
   password: string;
-  role: string;
+  role?: string;
   confirmationPassword?: string;
   addOne?: number;
   isBrilliant?: boolean;

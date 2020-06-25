@@ -30,10 +30,7 @@ That's it! The `confirmationPassword` field will not be saved to your database b
 function passwordMatchValidation() {
   if (this.isNew || this.isModified('password')) {
     if (this.password !== this.confirmationPassword) {
-      this.invalidate(
-        'password',
-        'Password and Confirmation Password do not match',
-      );
+      this.invalidate('password', 'Password and Confirmation Password do not match');
     }
   }
 }
@@ -41,7 +38,7 @@ function passwordMatchValidation() {
 UserSchema.pre('validate', passwordMatchValidation);
 ```
 
-Default values may be supplied.
+Any supplied default values will be used if no assignment has occured.
 
 ```typescript
 const UserSchema = new Schema({
@@ -71,7 +68,8 @@ const UserSchema = new Schema({
 });
 ```
 
-This does not affect your future interactions with your documents, you will still call it by the prescribed path: `this.confirmationPassword`.
+This does not affect your future interactions with your documents, you will still call it by the prescribed path: `this.confirmationPassword`. This is really only necessary to avoid conflict with
+mongoose document properties.
 
 You may want to manipulate values before assignment. To do so, set the transient property to a function that accepts the value being set and returns your modified content. Whatever is returned will be assigned to your field.
 
