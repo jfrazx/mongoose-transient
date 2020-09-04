@@ -38,7 +38,7 @@ function passwordMatchValidation() {
 UserSchema.pre('validate', passwordMatchValidation);
 ```
 
-Any supplied default values will be used if no assignment has occured.
+Any supplied default values will be used if no assignment has occurred.
 
 ```typescript
 const UserSchema = new Schema({
@@ -56,7 +56,7 @@ Types are still required by the Schema.
 
 For more advanced usage there are a number of options.
 
-Interally a private field is created to store content for transient properties with the default being `_${path}`, e.g. `_confirmationPassword`.
+Internally a private field is created to store content for transient properties with the default being `_${path}`, e.g. `_confirmationPassword`.
 To change this simply set the transient property on your schema to a string you would prefer to use.
 
 ```typescript

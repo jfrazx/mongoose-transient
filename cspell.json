@@ -1,0 +1,11 @@
+{
+  "version": "0.1",
+  "language": "en",
+  "words": [],
+  "ignoreRegExpList": [
+    "/from '[a-zA-Z]'/",
+    "/\"name\": \"[a-zA-Z]+\"/",
+    "/\"[a-zA-Z]*\": \"1.0.0\"/",
+    "/YY[YMD hms]+/"
+  ]
+}
