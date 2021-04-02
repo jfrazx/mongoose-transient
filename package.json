@@ -30,7 +30,6 @@
     "@semantic-release/commit-analyzer": "^8.0.1",
     "@semantic-release/release-notes-generator": "^9.0.2",
     "@types/jest": "^26.0.22",
-    "@types/mongoose": "^5.10.4",
     "@typescript-eslint/parser": "^4.20.0",
     "codecov": "^3.8.1",
     "commitizen": "^4.2.3",
@@ -61,5 +60,7 @@
     "type": "git",
     "url": "https://github.com/jfrazx/mongoose-transient.git"
   },
-  "peerDependencies": {}
+  "peerDependencies": {
+    "mongoose": ">= 4.4.5"
+  }
 }
