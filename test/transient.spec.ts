@@ -3,13 +3,14 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import * as mongoose from 'mongoose';
 import transient from '../src';
 
-const replSet = new MongoMemoryReplSet({
-  replSet: { storageEngine: 'wiredTiger' },
-});
-
 describe('Mongoose Transient', () => {
+  const replSet = new MongoMemoryReplSet({
+    replSet: { storageEngine: 'wiredTiger' },
+  });
+
   beforeAll(async () => {
     await replSet.waitUntilRunning();
+
     const uri = await replSet.getUri();
 
     await mongoose.connect(uri, {
@@ -45,7 +46,7 @@ describe('Mongoose Transient', () => {
     expect(user.another).toBeDefined();
   });
 
-  it('should not have virtuals on pojo', () => {
+  it('should not have virtual properties on plain objects', () => {
     const user = new User({
       name: 'Bart',
       password: 'eat!!!mysh0rts',
@@ -175,6 +176,7 @@ describe('Mongoose Transient', () => {
 
   it('should not link to transient properties', () => {
     mongoose.plugin(transient);
+
     const schema = new mongoose.Schema({
       testing: String,
       moar: {

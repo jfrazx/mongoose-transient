@@ -87,18 +87,18 @@ const setOptions = (path: string, trans: Transience): TransOpts => {
 };
 
 const determineLinkTo = (trans: Transience): string[] =>
-  isObject(trans) && trans.linkTo ? asArray(trans.linkTo) : [];
+  isTransientOptions(trans) && trans.linkTo ? asArray(trans.linkTo) : [];
 
 const determineArgs = (trans: Transience): any[] =>
-  isObject(trans) && Array.isArray(trans.args) ? trans.args : [];
+  isTransientOptions(trans) && Array.isArray(trans.args) ? trans.args : [];
 
 const determineGetter = (trans: Transience): TransientCaller =>
-  isObject(trans) && isFunction(trans.get) ? trans.get : defaultCaller;
+  isTransientOptions(trans) && isFunction(trans.get) ? trans.get : defaultCaller;
 
 const determineSetter = (trans: Transience): TransientCaller =>
   isFunction(trans)
     ? trans
-    : isObject(trans) && isFunction(trans.set)
+    : isTransientOptions(trans) && isFunction(trans.set)
     ? trans.set
     : defaultCaller;
 
@@ -107,7 +107,7 @@ const defaultCaller: TransientCaller = (value: any) => value;
 const determinePropertyName = (path: string, trans: Transience): string =>
   isString(trans)
     ? trans
-    : isObject(trans) && isString(trans.as)
+    : isTransientOptions(trans) && isString(trans.as)
     ? trans.as
     : `_${path}`;
 
@@ -115,7 +115,7 @@ const asArray = <T>(value: T | T[]): T[] => (Array.isArray(value) ? value : [val
 const isFunction = (value: any): value is TransientCaller =>
   typeof value === 'function';
 const isString = (value: any): value is string => typeof value === 'string';
-const isObject = (value: any): value is TransientOptions =>
+const isTransientOptions = (value: any): value is TransientOptions =>
   value && !Array.isArray(value) && typeof value === 'object';
 
 export default transient;
