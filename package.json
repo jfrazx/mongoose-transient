@@ -3,12 +3,17 @@
   "version": "0.0.0-development",
   "description": "Create transient properties on mongoose schemas",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "precm": "npm run test:coverage",
     "cm": "git-cz",
     "prebuild": "rimraf dist",
     "build": "tsc",
-    "coverage:post": "codecov",
+    "prepack": "npm run build",
     "pretest:coverage": "rimraf coverage",
     "test:coverage": "jest --coverage --detectOpenHandles",
     "test": "jest --detectOpenHandles",
@@ -25,13 +30,15 @@
   ],
   "author": "jfrazx",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "dependencies": {},
   "devDependencies": {
     "@semantic-release/commit-analyzer": "^8.0.1",
     "@semantic-release/release-notes-generator": "^9.0.2",
     "@types/jest": "^26.0.22",
     "@typescript-eslint/parser": "^4.20.0",
-    "codecov": "^3.8.1",
     "commitizen": "^4.2.3",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^7.23.0",
@@ -42,7 +49,6 @@
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "semantic-release": "^17.4.2",
-    "travis-deploy-once": "^5.0.11",
     "ts-jest": "^26.5.4",
     "typescript": "^4.2.3"
   },
