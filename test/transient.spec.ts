@@ -1,6 +1,6 @@
 import { User, IUser, mockedPreHook } from './lib/user.model';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
-import * as mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import transient from '../src';
 
 describe('Mongoose Transient', () => {
@@ -145,8 +145,8 @@ describe('Mongoose Transient', () => {
       confirmationPassword: 'sekurepassword',
     });
 
-    expect(mockedPreHook).toBeCalled();
-    expect(mockedPreHook).toBeCalledTimes(2);
+    expect(mockedPreHook).toHaveBeenCalled();
+    expect(mockedPreHook).toHaveBeenCalledTimes(2);
   });
 
   it('should link transient properties to schema properties', () => {
@@ -191,7 +191,7 @@ describe('Mongoose Transient', () => {
       },
     });
 
-    expect(() => mongoose.model('Tester', schema)).toThrowError(
+    expect(() => mongoose.model('Tester', schema)).toThrow(
       `TransientError: Attempting to link transient property 'wat' to 'moar' which does not exist or is itself transient`,
     );
   });
