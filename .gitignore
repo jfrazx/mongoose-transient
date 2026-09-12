@@ -17,5 +17,4 @@ coverage/
 
 */.DS_Store
 
-!.eslintrc.js
 !jest.config.js
