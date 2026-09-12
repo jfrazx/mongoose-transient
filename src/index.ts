@@ -99,8 +99,8 @@ const determineSetter = (trans: Transience): TransientCaller =>
   isFunction(trans)
     ? trans
     : isTransientOptions(trans) && isFunction(trans.set)
-    ? trans.set
-    : defaultCaller;
+      ? trans.set
+      : defaultCaller;
 
 const defaultCaller: TransientCaller = (value: any) => value;
 
@@ -108,8 +108,8 @@ const determinePropertyName = (path: string, trans: Transience): string =>
   isString(trans)
     ? trans
     : isTransientOptions(trans) && isString(trans.as)
-    ? trans.as
-    : `_${path}`;
+      ? trans.as
+      : `_${path}`;
 
 const asArray = <T>(value: T | T[]): T[] => (Array.isArray(value) ? value : [value]);
 const isFunction = (value: any): value is TransientCaller =>
