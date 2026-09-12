@@ -27,7 +27,8 @@ These were confirmed by the maintainer and supersede the first draft of this roa
 | D7 | **`files: ["dist", "src"]`** | `files: ["dist"]` with `sourceMap` dropped in Phase 2; shipping an orphaned map | Confirmed by the maintainer 2026-09-11. `tsconfig` sets `sourceMap: true`, so `dist/index.js.map` ships; without `src/` it points at sources not in the tarball. `src/` is a single file (~4 kB). Pairs with the `declarationMap: true` Phase 2 already plans — declaration maps are useless unless sources ship. |
 | D8 | **Dead-dependency check uses `node -e` over the manifest, folded into Phase 2** | `npm ls <pkg>` as a gate; a separate follow-up issue | `npm ls` prints the desired `(empty)` but **exits 1** when a package is absent — under `set -e` it fails precisely when it passes. Confirmed on this machine at `f2bb21f`. The corrected check belongs in the next unit of work, not three phases away on #53. |
 | D9 | **`tsconfig.json` sets `"rootDir": "./src"`** | Accepting `dist/src/` output and repointing `main`/`types`; `ignoreDeprecations` (inapplicable — this is `TS5011`, not `TS5107`) | TypeScript 6 changed implicit `rootDir` inference. Without it `tsc` exits **2** with `TS5011` and emits to `dist/src/`. Isolated to the version bump: the *unmodified* `tsconfig.json` fails identically under 6.0.3 with deprecations silenced, and passes under 4.2.3. Since Phase 1 added `prepack`, an unfixed build breaks `npm publish`, not just CI. |
-| D10 | **`jest`/`ts-jest` are not bumped in Phase 2** | Pulling `jest@30` + `ts-jest@29` forward to clear the peer override | Bumping `typescript` leaves `ts-jest@26.5.4` (peer `>=3.8 <5.0`) unsatisfied, but npm **warns and overrides, exit 0** — verified, not a blocker. `ts-jest@29` peers `jest ^29 || ^30`, so bumping it drags jest too; that is Phase 4's bundle. Phase 2 stays toolchain-only. |
+| D10 | ~~`jest`/`ts-jest` are not bumped in Phase 2~~ **Superseded by D11** | — | The measurement behind it was taken against an already-populated `node_modules`, where npm reports `overriding peer dependency` and exits 0. That is not what a clean resolution does. Kept here, struck through, because it was written into #50, #52 and #48 before it was falsified. |
+| D11 | **`jest@^30`, `ts-jest@^29`, `@types/jest@^30` bump forward into Phase 2** | Leaving them in Phase 4 (D10); `--legacy-peer-deps`; an `overrides` entry | Forced, not chosen. `ts-jest@26` caps `typescript` at `<5.0`, so on a clean tree `npm ci` **fails with `ERESOLVE`** — the branch could not be installed from its own lockfile. No `ts-jest` below 28 accepts TypeScript 6, and `ts-jest@29` peers `jest ^29 \|\| ^30`, so the jest stack moves as one unit. `--legacy-peer-deps` and `overrides` would mask the conflict and leave CI (#53) installing an unsupported combination. |
 
 ### D1 re-checked 2026-09-12 — still 6.0.3
 
@@ -217,12 +218,20 @@ self-verifying — no separate `npm run build` needs to precede it.
 
 ### Phase 2: TypeScript 6
 
-**Files:** Modify `tsconfig.json`, `package.json`
+**Files:** Modify `tsconfig.json`, `package.json`, `test/transient.spec.ts`, `test/lib/user.model.ts`
 
-Issue: #50 · decisions D1, D7, D8, D9, D10
+Issue: #50 · decisions D1, D7, D8, D9, D11 (D11 supersedes D10)
 
-- [ ] Bump `typescript` to `~6.0.3` (D1). Expect an `ERESOLVE overriding peer dependency`
-      warning from `ts-jest@26.5.4` — accepted, see D10. It is a warning, not a failure.
+- [ ] Bump `typescript` to `~6.0.3` (D1) **together with** `jest@^30`, `ts-jest@^29` and
+      `@types/jest@^30` (D11). These cannot be separated: `ts-jest@26` caps `typescript` at
+      `<5.0`, so bumping TypeScript alone makes `npm ci` fail with `ERESOLVE` on a clean tree.
+- [ ] Consequence of `esModuleInterop`: the test files' `import * as mongoose` must become a
+      default import. Mongoose 5 exports an *instance*, and `__importStar` copies only own
+      enumerable properties, so `connect`/`disconnect`/`plugin`/`model`/`Schema` arrive
+      `undefined`. `src/index.ts` is unaffected — its mongoose import is type-only and elided.
+- [ ] Consequence of `@types/jest@30`: Jest 30 removed the deprecated matcher aliases, so
+      `toBeCalled` / `toBeCalledTimes` / `toThrowError` become `toHaveBeenCalled` /
+      `toHaveBeenCalledTimes` / `toThrow`. Behaviour is identical.
 - [ ] In `tsconfig.json`: `target: "ES2022"`, `lib: ["ES2022"]`, `module: "nodenext"`,
       `moduleResolution: "nodenext"`, plus `esModuleInterop: true`, `skipLibCheck: true`,
       `declarationMap: true`, `isolatedModules: true`, and **`rootDir: "./src"` (D9)**.
@@ -308,7 +317,9 @@ The test suite cannot be fixed without moving Mongoose, and Mongoose cannot move
 
 **Files:** Modify `src/index.ts:3`, `test/transient.spec.ts:7-21`, `test/lib/user.model.ts`, `jest.config.js`, `package.json`; Create `tsconfig.test.json`
 
-- [ ] Bump devDependencies: `mongoose@^9`, `mongodb-memory-server@^11`, `jest@^30`, `ts-jest@^29`, `@types/jest@^30`.
+- [ ] Bump devDependencies: `mongoose@^9`, `mongodb-memory-server@^11`. The jest stack
+      (`jest@^30`, `ts-jest@^29`, `@types/jest@^30`) already landed in Phase 2 under D11 —
+      verify rather than re-bump.
 - [ ] Set `peerDependencies: { "mongoose": "^8.0.0 || ^9.0.0" }`.
 - [ ] `src/index.ts:3` — change `extends mongoose.SchemaTypeOpts<T>` to `extends mongoose.SchemaTypeOptions<T>`.
 - [ ] Run `npm run typecheck` and resolve any residual `Schema<any>` / `Document` fallout before touching tests.
