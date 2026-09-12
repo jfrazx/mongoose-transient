@@ -44,7 +44,7 @@
     "eslint": "^7.23.0",
     "husky": "^6.0.0",
     "jest": "^30.5.1",
-    "mongodb-memory-server": "^6.9.6",
+    "mongodb-memory-server": "^11.0.0",
     "mongoose": "^5.12.3",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
