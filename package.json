@@ -51,7 +51,7 @@
     "globals": "^16.5.0",
     "husky": "^6.0.0",
     "jest": "^30.5.1",
-    "mongodb-memory-server": "^6.9.6",
+    "mongodb-memory-server": "^11.0.0",
     "mongoose": "^5.12.3",
     "rimraf": "^3.0.2",
     "semantic-release": "^17.4.2",
