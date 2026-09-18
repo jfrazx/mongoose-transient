@@ -107,6 +107,15 @@ export default defineConfig([
       // here and an undefined reference in the suite would go unreported.
       // Revisit when Phase 4 (#52) adds tsconfig.test.json; at that point tsc
       // becomes the authority for test/ too and this can go back off.
+      //
+      // This does NOT misfire on type-only references. no-undef resolves names
+      // through whichever parser is configured, and @typescript-eslint/parser
+      // ships @typescript-eslint/scope-manager, which registers interfaces and
+      // type aliases as scope variables -- so `this: UserModel` in
+      // test/lib/user.model.ts resolves, while a genuinely missing type is
+      // still reported. The failure this looks like it should cause belongs to
+      // espree, which is not the parser used for .ts here. Before disabling it
+      // on that theory, run `npx eslint test/lib/user.model.ts` and check.
       'no-undef': 'error',
     },
   },
