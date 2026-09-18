@@ -53,7 +53,7 @@
     "jest": "^30.5.1",
     "mongodb-memory-server": "^6.9.6",
     "mongoose": "^5.12.3",
-    "rimraf": "^3.0.2",
+    "rimraf": "^6.0.0",
     "semantic-release": "^17.4.2",
     "ts-jest": "^29.4.12",
     "typescript": "~6.0.3"
