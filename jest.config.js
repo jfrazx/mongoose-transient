@@ -6,21 +6,21 @@ module.exports = {
   },
   testRegex: '/test/\\w+.spec.ts$',
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
-  coverageDirectory: "./coverage/",
+  coverageDirectory: './coverage/',
   collectCoverage: true,
   collectCoverageFrom: [
-    "**/*.ts",
-    "!**/node_modules/**",
-    "!**/coverage/**",
-    "!**/dist/**",
-    "!**/test/**",
+    '**/*.ts',
+    '!**/node_modules/**',
+    '!**/coverage/**',
+    '!**/dist/**',
+    '!**/test/**',
   ],
   coverageThreshold: {
-    "global": {
-      "branches": 100,
-      "functions": 100,
-      "lines": 100,
-      "statements": 100
-    }
-  }
+    global: {
+      branches: 100,
+      functions: 100,
+      lines: 100,
+      statements: 100,
+    },
+  },
 };
