@@ -1,0 +1,23 @@
+{
+  // Type-checks the test suite alongside the source. The root config is
+  // emit-oriented and deliberately narrow: it includes only src/** and excludes
+  // **/*.spec.ts, so without this config nothing type-checks test/.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // The root config sets rootDir to ./src, which rejects test files outright
+    // (TS6059). This config never emits, so rootDir only needs to be wide
+    // enough to contain every input.
+    "rootDir": ".",
+    "noEmit": true,
+    // Required, not optional. TypeScript 6 does not pick up @types/jest
+    // automatically here, and without this every jest global in the suite
+    // reports as an undefined name -- 58 errors that look like real failures.
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*", "test/**/*"],
+  // Load-bearing, and the reason this file cannot simply inherit: `extends`
+  // REPLACES exclude rather than merging it, and the root config excludes
+  // **/*.spec.ts. Without this line the suite's only spec file is dropped and
+  // the config silently checks nothing.
+  "exclude": ["node_modules"]
+}

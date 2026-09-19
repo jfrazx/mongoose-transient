@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 
-export interface TransientTypeOpts<T = any> extends mongoose.SchemaTypeOpts<T> {
+export interface TransientTypeOpts<T = any> extends mongoose.SchemaTypeOptions<T> {
   transient?: Transience;
 }
 export type Transience = boolean | string | TransientCaller | TransientOptions;
@@ -18,19 +18,34 @@ interface TransOpts extends Required<Omit<TransientOptions, 'linkTo'>> {
   linkTo: string[];
 }
 
+interface TransientPath {
+  path: string;
+  trans: Transience;
+  defaultValue: any;
+}
+
 export const transient = (schema: mongoose.Schema<any>): void => {
+  const transients: TransientPath[] = [];
+
+  // Collect before mutating. eachPath() walks a snapshot of the path names but
+  // reads each SchemaType lazily, and removing a path can take sibling
+  // subpaths with it -- removing a Map path `m` also drops its `m.$*` entry.
+  // Removing mid-iteration therefore hands `undefined` to a later callback.
   schema.eachPath((path, type) => {
-    const options = getTypeOpts(type);
-    const { transient: trans = false, default: defaultValue } = options;
+    const { transient: trans = false, default: defaultValue } = getTypeOpts(type);
 
     if (trans) {
-      const opts = setOptions(path, trans);
-
-      schema.remove(path);
-      linkPaths(schema, opts);
-
-      schema.virtual(path).get(getter(opts, defaultValue)).set(setter(opts));
+      transients.push({ path, trans, defaultValue });
     }
+  });
+
+  transients.forEach(({ path, trans, defaultValue }) => {
+    const opts = setOptions(path, trans);
+
+    schema.remove(path);
+    linkPaths(schema, opts);
+
+    schema.virtual(path).get(getter(opts, defaultValue)).set(setter(opts));
   });
 };
 

@@ -59,14 +59,16 @@ export interface IUser {
 export interface UserModel extends IUser, mongoose.Document {
   _id: any;
 }
-function preHook(this: UserModel, next: Function) {
+// Deliberately takes no `next` callback. `jest.fn()` erases the wrapped
+// function's arity, so kareem classifies a callback-style hook as
+// promise-style and invokes it with no arguments -- `next()` would throw.
+// Mongoose treats a hook that simply returns as a synchronous hook.
+function preHook(this: UserModel) {
   if (this.isNew || this.isModified('password')) {
     if (this.password !== this.confirmationPassword) {
       this.invalidate('password', 'Password and Confirmation Password do not match');
     }
   }
-
-  next();
 }
 export const mockedPreHook = jest.fn(preHook);
 

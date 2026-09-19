@@ -96,27 +96,20 @@ export default defineConfig([
   {
     files: ['test/**/*.ts'],
     languageOptions: {
-      // jest for the suite globals, node because testEnvironment is 'node' and
-      // specs reach for console/process/setTimeout/Buffer.
-      globals: { ...globals.jest, ...globals.node },
-    },
-    rules: {
-      // Deliberately back on, against eslint-recommended's advice. That config
-      // switches no-undef off because ts(2304) covers it -- but tsconfig.json
-      // includes only src/** and excludes **/*.spec.ts, so tsc checks nothing
-      // here and an undefined reference in the suite would go unreported.
-      // Revisit when Phase 4 (#52) adds tsconfig.test.json; at that point tsc
-      // becomes the authority for test/ too and this can go back off.
+      // jest for the suite globals, node because testEnvironment is 'node'.
       //
-      // This does NOT misfire on type-only references. no-undef resolves names
-      // through whichever parser is configured, and @typescript-eslint/parser
-      // ships @typescript-eslint/scope-manager, which registers interfaces and
-      // type aliases as scope variables -- so `this: UserModel` in
-      // test/lib/user.model.ts resolves, while a genuinely missing type is
-      // still reported. The failure this looks like it should cause belongs to
-      // espree, which is not the parser used for .ts here. Before disabling it
-      // on that theory, run `npx eslint test/lib/user.model.ts` and check.
-      'no-undef': 'error',
+      // These are still consumed after D14's retirement: `no-global-assign`
+      // comes from js.configs.recommended and is not switched off for .ts, so
+      // it reads this list and reports `describe = 1` as modifying a read-only
+      // global. Drop the list and that check silently stops working.
+      //
+      // What did go is D14's `no-undef: 'error'`. D14 set it because
+      // tsconfig.json included only src/** and excluded **/*.spec.ts, so tsc
+      // checked nothing here. Phase 4 (#52) added tsconfig.test.json and wired
+      // `typecheck` into pretest, so ts(2304) now covers test/ and the `**/*.ts`
+      // block above turns no-undef off for these files along with the rest.
+      // Repeating it here would disable a rule that is already disabled.
+      globals: { ...globals.jest, ...globals.node },
     },
   },
 
