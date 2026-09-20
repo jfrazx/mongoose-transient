@@ -61,7 +61,7 @@
     "typescript": "~6.0.3"
   },
   "overrides": {
-    "mongodb": "~7.5"
+    "mongodb": "~7.6.0"
   },
   "config": {
     "commitizen": {
