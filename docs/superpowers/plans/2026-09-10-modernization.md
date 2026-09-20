@@ -30,6 +30,17 @@ These were confirmed by the maintainer and supersede the first draft of this roa
 | D10 | ~~`jest`/`ts-jest` are not bumped in Phase 2~~ **Superseded by D11** | — | The measurement behind it was taken against an already-populated `node_modules`, where npm reports `overriding peer dependency` and exits 0. That is not what a clean resolution does. Kept here, struck through, because it was written into #50, #52 and #48 before it was falsified. |
 | D11 | **`jest@^30`, `ts-jest@^29`, `@types/jest@^30` bump forward into Phase 2** | Leaving them in Phase 4 (D10); `--legacy-peer-deps`; an `overrides` entry | Forced, not chosen. `ts-jest@26` caps `typescript` at `<5.0`, so on a clean tree `npm ci` **fails with `ERESOLVE`** — the branch could not be installed from its own lockfile. No `ts-jest` below 28 accepts TypeScript 6, and `ts-jest@29` peers `jest ^29 \|\| ^30`, so the jest stack moves as one unit. `--legacy-peer-deps` and `overrides` would mask the conflict and leave CI (#53) installing an unsupported combination. |
 
+**D12–D14** were locked during Phase 3 and are recorded in full on #51: D12 (`braceStyle: '1tbs'`), D13 (typescript-eslint's `eslint-recommended` reproduced inline for `.ts`), D14 (`no-undef` on for `test/`, `no-unused-vars` off). They are not reproduced here; this table was not updated at the time, and the gap is noted rather than back-filled from memory. **D14 is retired by D15–D18's phase** — see the Phase 4 section.
+
+## Locked decisions (2026-09-18) — Phase 4
+
+| # | Decision | Rejected alternative | Why |
+|---|---|---|---|
+| D15 | **The MongoDB driver is held at `~7.5` via `overrides`, paired with pinning `mongoose` to `~9.9`** | Pinning `mongoose` alone; pinning the mongod version; waiting for the upstream fix; the `overrides` entry alone with `mongoose@^9`; replacing Jest | `mongodb@7.6.0` fails the mongod handshake **under Jest specifically** (`MongoServerError: Missing required sub-document 'driver' in the client metadata document`); plain `node` is unaffected. Upstream: [mongodb-memory-server#1026](https://github.com/typegoose/mongodb-memory-server/issues/1026), [mongoose#16499](https://github.com/Automattic/mongoose/issues/16499), introduced by [node-mongodb-native#4992](https://github.com/mongodb/node-mongodb-native/pull/4992), tracked as [NODE-7832](https://jira.mongodb.org/browse/NODE-7832). Each rejected option was measured, not assumed: pinning `mongoose` to `~9.9` alone leaves `mongodb-memory-server` on its own nested `7.6.0` and still fails, since the failure is in the memory server's *internal* client; mongod 8.0.15 rejects the handshake identically, so the lever is the driver and not the server. The pairing matters — `mongoose@9.9.x` declares `mongodb: ~7.5`, `mongodb-memory-server` declares `^7.2.0`, so at `~7.5` **nothing in the tree is forced outside a range its own package declares**, and `npm ls` reports no override at all. This reverses D11's reasoning about `overrides` deliberately: D11's conflict was a permanent peer-range incompatibility being papered over, this is a dated upstream regression with an open ticket. **Temporary — removal tracked in #65.** |
+| D16 | **The `pre('validate')` test hook drops its `next` parameter and becomes arity-0** | Preserving the callback form by wrapping so arity survives `jest.fn` | #52 predicted `next: Function` would need updating for *typing* reasons. It is a **runtime** break: `jest.fn()` erases the wrapped function's arity, so `kareem@3.3.0` (pinned exactly by `mongoose@9.9.5`, which D15 holds us at) classifies the hook as promise-style and invokes it with no arguments — `next()` then throws `TypeError: next is not a function` and two tests fail. Mongoose has supported hooks that simply return for many majors, so dropping the parameter is the smaller change, and it independently clears a `pre('validate')` overload type error. |
+| D17 | **`collectCoverageFrom` is narrowed to `['src/**/*.ts']`** | Keeping `'**/*.ts'` plus the four-entry denylist | The denylist needs a new entry for every future root-level `.ts` file and fails silently when one is forgotten. The allowlist states the actual intent. |
+| D18 | **`peerDependencies` becomes `"^8.0.0 \|\| ^9.0.0"`; the `^8` half stays** | Narrowing to `^9.0.0` on the grounds that 8.x is untested | `src/index.ts` type-checks with zero errors against both `mongoose@8.24.4` and `9.10.1`, and `Schema.prototype.remove(path)` is present at runtime and in the types on both — the library's entire contact surface with mongoose is types plus `Schema.prototype.{remove,path,virtual,eachPath}`. The 8.x *runtime* is not verified and cannot be here: `mongodb-memory-server@11` requires driver `^7.2.0` while `mongoose@8` requires `~6.x`, so D15's pin makes an 8.x suite run impossible. **Accepted on the condition that the release notes say 8.x is supported by inspection, not by CI.** Still a large improvement on `">= 4.4.5"`, which was simply false. |
+
 ### D1 re-checked 2026-09-12 — still 6.0.3
 
 TypeScript `latest` has since moved to **7.0.2**, so the ceiling was re-verified rather than assumed.
@@ -317,18 +328,32 @@ The test suite cannot be fixed without moving Mongoose, and Mongoose cannot move
 
 **Files:** Modify `src/index.ts:3`, `test/transient.spec.ts:7-21`, `test/lib/user.model.ts`, `jest.config.js`, `package.json`; Create `tsconfig.test.json`
 
-- [ ] Bump devDependencies: `mongoose@^9`, `mongodb-memory-server@^11`. The jest stack
-      (`jest@^30`, `ts-jest@^29`, `@types/jest@^30`) already landed in Phase 2 under D11 —
-      verify rather than re-bump.
-- [ ] Set `peerDependencies: { "mongoose": "^8.0.0 || ^9.0.0" }`.
-- [ ] `src/index.ts:3` — change `extends mongoose.SchemaTypeOpts<T>` to `extends mongoose.SchemaTypeOptions<T>`.
-- [ ] Run `npm run typecheck` and resolve any residual `Schema<any>` / `Document` fallout before touching tests.
-- [ ] `test/transient.spec.ts` — replace the `beforeAll` body with `replSet = await MongoMemoryReplSet.create({ replSet: { count: 1, storageEngine: 'wiredTiger' } });` then `await mongoose.connect(replSet.getUri());`. Delete all four removed connect options.
-- [ ] `test/lib/user.model.ts` — `UserModel extends IUser, mongoose.Document` and `next: Function` will likely need updating for Mongoose 9 typings (`HydratedDocument`, `CallbackWithoutResultAndOptionalError`).
-- [ ] `jest.config.js` — drop `collectCoverage: true`, drop the redundant `transform` block, escape the dot: `testRegex: '/test/\\w+\\.spec\\.ts$'`.
-- [ ] Create `tsconfig.test.json` extending the root config with `include: ["src/**/*", "test/**/*"]`; point `typecheck` at it.
-- [ ] Run `npx jest`.
-- [ ] Commit.
+- [x] Bump devDependencies: `mongoose@~9.9` (D15, not `^9`), `mongodb-memory-server@^11`, and add
+      the `overrides: { "mongodb": "~7.5" }` entry. The jest stack (`jest@^30`, `ts-jest@^29`,
+      `@types/jest@^30`) already landed in Phase 2 under D11 — verified, not re-bumped.
+- [x] Set `peerDependencies: { "mongoose": "^8.0.0 || ^9.0.0" }` (D18).
+- [x] `src/index.ts:3` — change `extends mongoose.SchemaTypeOpts<T>` to `extends mongoose.SchemaTypeOptions<T>`.
+      This is the whole of the forced source change: with it, `src/` type-checks with **zero** errors and
+      no `Schema<any>` / `Document` fallout materialised.
+- [x] `test/transient.spec.ts` — `let replSet: MongoMemoryReplSet`, then
+      `replSet = await MongoMemoryReplSet.create({ replSet: { count: 1, storageEngine: 'wiredTiger' } });`
+      and `await mongoose.connect(replSet.getUri());`. All four removed connect options deleted.
+      The binding must become `let`: `create()` is async, so the old `const` at `describe` scope cannot stay.
+- [x] `test/lib/user.model.ts` — **`HydratedDocument` / `CallbackWithoutResultAndOptionalError` turned out
+      not to be needed.** `UserModel extends IUser, mongoose.Document` compiles clean against mongoose 9.
+      The real change is D16: drop the `next` parameter, which is a runtime break rather than a typing one.
+- [x] `jest.config.js` — drop `collectCoverage: true`, drop the redundant `transform` block, escape both
+      dots: `testRegex: '/test/\\w+\\.spec\\.ts$'`, and narrow `collectCoverageFrom` per D17.
+- [x] Create `tsconfig.test.json` extending the root config with `include: ["src/**/*", "test/**/*"]`;
+      point `typecheck` at it. **Two overrides are load-bearing and neither is optional:** `rootDir: "."`
+      (D9 set it to `./src`, which rejects test files with `TS6059`) and `"types": ["jest", "node"]`
+      (TypeScript 6 does not auto-include `@types/jest` here — without it every jest global reports as an
+      undefined name, 58 errors that look like real failures). `exclude` must also be restated, because
+      `extends` replaces it and the root config excludes `**/*.spec.ts`. `@types/node` becomes an explicit
+      devDependency rather than a transitive one, since `types` now names it.
+- [x] `eslint.config.mjs` — retire D14's `no-undef` exception for `test/**/*.ts`; tsc is now the authority.
+- [x] Run `npx jest`.
+- [x] Commit.
 
 **Acceptance criteria:**
 - `npx jest` exits 0 with all 11 tests passing and no open-handle or post-teardown crash.
@@ -337,6 +362,28 @@ The test suite cannot be fixed without moving Mongoose, and Mongoose cannot move
 - `grep -c 'SchemaTypeOpts\b' src/index.ts` returns 0.
 - `npm run typecheck` covers `test/` (deleting a needed import from a spec file makes it fail).
 - **Known risk to check explicitly:** the "should not save transient properties" test asserts `toHaveLength(5)` on persisted keys — confirm Mongoose 9 has not changed which internal keys are stored, rather than adjusting the number to make it pass.
+  **Resolved:** it has not. The assertion passes untouched; Mongoose 9 persists the same five keys.
+
+**Outcome (2026-09-19):** all criteria met — **13/13** passing, 100% on all four coverage metrics, `src/` + `test/`
+type-checking clean, `lint` and `build` green. The blocker this phase was written around (mongod 4.0.14 has no
+darwin-arm64 build) is genuinely resolved by the memory-server bump, which defaults to mongod 8.2.6; it was
+replaced by the upstream driver regression that D15 pins around.
+
+**The count moved from 11 to 13, and the criterion above should be read as "the original 11 still pass".** Code
+review found two gaps that warranted tests rather than notes:
+
+- **A Mongoose 9 regression in the library itself.** `Schema.prototype.remove(path)` now deletes a Map path's
+  `<path>.$*` entry along with the parent, and `eachPath()` walks a snapshot of path names while reading each
+  type lazily — so removing during the walk handed `undefined` to a later callback and threw
+  `TypeError: Cannot destructure property 'options' of 'undefined'`. Verified absent on mongoose 5.13.23, which
+  leaves `m.$*` in place, so this is a migration regression and not pre-existing. `transient()` now collects
+  every transient path before mutating any of them.
+- **The `pre('validate')` hook had no behavioural test.** Only call counts were asserted, so an empty hook body
+  would have passed — leaving D16's change of calling convention effectively unverified.
+
+Review also found the suite was order-dependent: the module-level `jest.fn` spy was never reset, so
+`toHaveBeenCalledTimes(2)` was counting a call that leaked from the preceding test. `npx jest --randomize`
+failed on 3 of 5 seeds. With a `beforeEach` clear the correct isolated count is 1, and all 5 seeds pass.
 
 ### Phase 5: CI/CD
 

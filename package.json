@@ -14,13 +14,14 @@
     "prebuild": "rimraf dist",
     "build": "tsc",
     "prepack": "npm run build",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.test.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "eslint . --fix",
     "format:check": "eslint .",
-    "pretest:coverage": "rimraf coverage",
+    "pretest:coverage": "npm run typecheck && rimraf coverage",
     "test:coverage": "jest --coverage --detectOpenHandles",
+    "pretest": "npm run typecheck",
     "test": "jest --detectOpenHandles",
     "test:watch": "jest --watchAll --detectOpenHandles",
     "semantic-release": "semantic-release"
@@ -44,6 +45,7 @@
     "@semantic-release/release-notes-generator": "^9.0.2",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/jest": "^30.0.0",
+    "@types/node": "^20.19.0",
     "@typescript-eslint/parser": "^8.70.0",
     "commitizen": "^4.2.3",
     "cz-conventional-changelog": "^3.3.0",
@@ -51,12 +53,15 @@
     "globals": "^16.5.0",
     "husky": "^6.0.0",
     "jest": "^30.5.1",
-    "mongodb-memory-server": "^6.9.6",
-    "mongoose": "^5.12.3",
+    "mongodb-memory-server": "^11.2.0",
+    "mongoose": "~9.9",
     "rimraf": "^3.0.2",
     "semantic-release": "^17.4.2",
     "ts-jest": "^29.4.12",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "mongodb": "~7.5"
   },
   "config": {
     "commitizen": {
@@ -73,6 +78,6 @@
     "url": "https://github.com/jfrazx/mongoose-transient.git"
   },
   "peerDependencies": {
-    "mongoose": ">= 4.4.5"
+    "mongoose": "^8.0.0 || ^9.0.0"
   }
 }

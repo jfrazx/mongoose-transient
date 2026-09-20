@@ -4,26 +4,27 @@ import mongoose from 'mongoose';
 import transient from '../src';
 
 describe('Mongoose Transient', () => {
-  const replSet = new MongoMemoryReplSet({
-    replSet: { storageEngine: 'wiredTiger' },
-  });
+  let replSet: MongoMemoryReplSet;
 
   beforeAll(async () => {
-    await replSet.waitUntilRunning();
-
-    const uri = await replSet.getUri();
-
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useFindAndModify: false,
-      useCreateIndex: true,
+    replSet = await MongoMemoryReplSet.create({
+      replSet: { count: 1, storageEngine: 'wiredTiger' },
     });
+
+    await mongoose.connect(replSet.getUri());
+  });
+
+  // The hook spy is module-level and shared by every test in this file, so
+  // without a reset the call count depends on which tests ran first.
+  beforeEach(() => {
+    mockedPreHook.mockClear();
   });
 
   afterAll(async () => {
     await mongoose.disconnect();
-    await replSet.stop();
+    // Optional-chained: if beforeAll threw before create() resolved, replSet is
+    // undefined and an unguarded .stop() would mask the real failure.
+    await replSet?.stop();
   });
 
   it('should create a new User', () => {
@@ -124,7 +125,11 @@ describe('Mongoose Transient', () => {
       another: 'dog',
     });
 
-    const dbUser = (await User.findById(user.id).lean()) as IUser;
+    const found = (await User.findById(user.id).lean()) as IUser | null;
+
+    expect(found).not.toBeNull();
+
+    const dbUser = found as IUser;
     const dbUserKeys = Object.keys(dbUser);
 
     expect(dbUserKeys).toHaveLength(5);
@@ -146,7 +151,19 @@ describe('Mongoose Transient', () => {
     });
 
     expect(mockedPreHook).toHaveBeenCalled();
-    expect(mockedPreHook).toHaveBeenCalledTimes(2);
+    // One create, one validate. This was 2 while the spy leaked calls from the
+    // preceding test; it is 1 now that beforeEach clears it.
+    expect(mockedPreHook).toHaveBeenCalledTimes(1);
+  });
+
+  it('should invalidate through the hook when the passwords do not match', async () => {
+    await expect(
+      User.create({
+        name: 'Bart',
+        password: 'sekurepassword',
+        confirmationPassword: 'somethingelse',
+      }),
+    ).rejects.toThrow('Password and Confirmation Password do not match');
   });
 
   it('should link transient properties to schema properties', () => {
@@ -174,10 +191,32 @@ describe('Mongoose Transient', () => {
     expect(user.description).toBe('The user role is invalid');
   });
 
-  it('should not link to transient properties', () => {
-    mongoose.plugin(transient);
-
+  it('should handle transient paths whose subpaths vanish with the parent', () => {
+    // Removing a Map path takes its `<path>.$*` entry with it. eachPath walks a
+    // snapshot of path names but reads each type lazily, so removing during the
+    // walk used to hand `undefined` to the next callback and throw.
     const schema = new mongoose.Schema({
+      keep: String,
+      meta: { type: Map, of: String, transient: true },
+    });
+
+    expect(() => transient(schema)).not.toThrow();
+
+    expect(schema.path('meta')).toBeUndefined();
+    expect(schema.path('keep')).toBeDefined();
+    expect(Object.keys(schema.virtuals)).toContain('meta');
+  });
+
+  it('should not link to transient properties', () => {
+    // Its own Mongoose instance. Registering the plugin on the shared singleton
+    // would apply it to every schema compiled anywhere in the process from then
+    // on, and leave a 'Tester' entry in the global model registry -- neither of
+    // which this test ever undoes.
+    const isolated = new mongoose.Mongoose();
+
+    isolated.plugin(transient);
+
+    const schema = new isolated.Schema({
       testing: String,
       moar: {
         type: String,
@@ -191,7 +230,7 @@ describe('Mongoose Transient', () => {
       },
     });
 
-    expect(() => mongoose.model('Tester', schema)).toThrow(
+    expect(() => isolated.model('Tester', schema)).toThrow(
       `TransientError: Attempting to link transient property 'wat' to 'moar' which does not exist or is itself transient`,
     );
   });

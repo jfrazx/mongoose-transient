@@ -1,20 +1,10 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  transform: {
-    '^.+\\.tsx?$': 'ts-jest',
-  },
-  testRegex: '/test/\\w+.spec.ts$',
+  testRegex: '/test/.*\\.spec\\.ts$',
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
   coverageDirectory: './coverage/',
-  collectCoverage: true,
-  collectCoverageFrom: [
-    '**/*.ts',
-    '!**/node_modules/**',
-    '!**/coverage/**',
-    '!**/dist/**',
-    '!**/test/**',
-  ],
+  collectCoverageFrom: ['src/**/*.ts'],
   coverageThreshold: {
     global: {
       branches: 100,
